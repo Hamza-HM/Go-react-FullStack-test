@@ -8,9 +8,9 @@ import (
 )
 
 type Todo struct {
-	ID        int    `json: "id"`
-	Completed bool   `json: "completed"`
-	Body      string `json: "body"`
+	ID        int    `json:"id"`
+	Completed bool   `json:"completed"`
+	Body      string `json:"body"`
 }
 
 func main() {
@@ -24,13 +24,19 @@ func main() {
 	})
 
 	app.Post("/api/todos", func(c *fiber.Ctx) error {
-		todo := &Todo{} // { id: 0, Completed: false, Body: ''} dfault values of go
+		if c.Body() == nil || len(c.Body()) == 0 {
+			return c.Status(400).JSON(fiber.Map{"error": "Request body is required"})
+		}
+
+		todo := &Todo{}
 		if err := c.BodyParser(todo); err != nil {
-			return err
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 		}
+
 		if todo.Body == "" {
-			return c.Status(400).JSON(fiber.Map{"Error": "Body is required"})
+			return c.Status(400).JSON(fiber.Map{"error": "Todo body is required"})
 		}
+
 		todo.ID = len(todos) + 1
 		todos = append(todos, *todo)
 		return c.Status(201).JSON(todo)
@@ -38,4 +44,3 @@ func main() {
 
 	log.Fatal(app.Listen(":4000"))
 }
-
